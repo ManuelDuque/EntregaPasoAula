@@ -29,6 +29,7 @@ class Processor:
         self.reset()
 
     def reset(self):
+        self.__image_state__ = None
         self.__state__ = State.INSIDE
         self.__counter__ = 0
 
@@ -66,7 +67,24 @@ class Processor:
         if len(cnts) != 0:
         # Get the biggest contour
             contours = max(cnts, key=cv2.contourArea)
-        return {"gray": gray, "frameDelta": frameDelta, "blurred": blurred, "thresh": thresh, "cnts": cnts, "contours": contours}
+        state = {"gray": gray, "frameDelta": frameDelta, "blurred": blurred, "thresh": thresh, "cnts": cnts, "contours": contours}
+        self.__image_state__ = {"state": state, "frame": image}
+        return state
+
+    def getSavedImageState(self):
+        '''
+        Get the last state of the image frame processed.
+
+        ### Returns:
+        Dictionary with the following keys:
+        - contours: The contours of the moving object in the image (list).
+        - gray: The image transformed to gray (numpy.ndarray).
+        - frameDelta: The difference between the first frame and the current frame (numpy.ndarray).
+        - blurred: The image with a blur applied (numpy.ndarray).
+        - thresh: The image with a threshold applied (numpy.ndarray).
+        - cnts: The contours of the moving object in the image (list).
+        '''
+        return self.__image_state__
 
     def fromContoursToCentroid(self, contours):
         '''

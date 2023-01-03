@@ -8,7 +8,7 @@ class QtWindow:
     '''
     Class to create the window of the application and manage the events.
     '''
-    
+
     def __init__(self):
         '''
         Constructor of the class.
@@ -89,6 +89,7 @@ class QtWindow:
         - The debug mode can't be activated if the video is paused.
         '''
         self.debug = True
+        self.__show_debug__()
     
     def __stopDebug__(self):
         '''
@@ -214,7 +215,12 @@ class QtWindow:
         self.ui.spinBarrera1.setValue(lower)
         self.ui.sliderBarrera1.setValue(lower)
         self.__lower_barrier__ = { "y": lower, "color": color if color is not None else [255, 0, 0], "thickness": thickness if thickness is not None else 5 }
-    
+        # Show the changes in the view_source window
+        saved = self.processor.getSavedImageState()
+        if saved is not None:
+            image = saved["frame"]
+            self.__adapter_to_video_source__(image)
+
     def __change_barrier_upper_value__(self, upper, color=None, thickness=None):
         '''
         ### Private method.
@@ -238,6 +244,11 @@ class QtWindow:
         self.ui.spinBarrera2.setValue(upper)
         self.ui.sliderBarrera2.setValue(upper)
         self.__upper_barrier__ = { "y": upper, "color": color if color is not None else [0, 255, 0], "thickness": thickness if thickness is not None else 5 }
+        # Show the changes in the view_source window
+        saved = self.processor.getSavedImageState()
+        if saved is not None:
+            image = saved["frame"]
+            self.__adapter_to_video_source__(image)
 
     def __update__(self):
         '''
@@ -256,9 +267,6 @@ class QtWindow:
             processed = self.processor.fromFrameToContours(image, self.firstFrame)
             cnts = processed["cnts"]
             contours = processed["contours"]
-            # Get the width and height of the video_source
-            width = self.ui.video_source.width()
-            height = self.ui.video_source.height()
             # Get the centroid of the person
             centroid = None
             if len(cnts) != 0:
@@ -267,33 +275,67 @@ class QtWindow:
                 # Get the centroid of the person
                 centroid = self.processor.fromContoursToCentroid(contours)
                 # Get the position of the centroid in the video_source window
-                x = int(centroid[0] * width / self.video.get(3))
-                y = int(centroid[1] * height / self.video.get(4))
+                x = int(centroid[0] * self.ui.video_source.width() / self.video.get(3))
+                y = int(centroid[1] * self.ui.video_source.height() / self.video.get(4))
                 # Draw the centroid of the person
                 cv2.drawContours(image, [contours], -1, self.utils.getValueFromConfigOf("contours", "color"), 1)
                 cv2.circle(image, center=centroid, radius=7, color=(92, 200, 200), thickness=-1)
-            # Resize the image
-            image = cv2.resize(image, dsize=(width, height), interpolation=cv2.INTER_CUBIC)
-            # Draw the barriers
-            image = self.__show_lines__(image)
-            # Get the pixmap from the image and show it
-            pixmap = QtGui.QPixmap(QtGui.QImage(image.data, image.shape[1], image.shape[0], QtGui.QImage.Format_RGB888))
-            self.ui.video_source.setPixmap(pixmap)
+            # Adapt the image to the video_source window
+            self.__adapter_to_video_source__(image)
             # Update the counter
             if centroid is not None:
                 counter = self.processor.process(centroid=(x, y), barriers=self.__barriers__)
                 self.ui.counter.setText(self.utils.getValueFromConfigOf("ui", "counter_text").format(counter))
             # Show the debug windows
-            if self.debug:    
-                gray = processed["gray"]
-                frameDelta = processed["frameDelta"]
-                blurred = processed["blurred"]
-                thresh = processed["thresh"]
-                cv2.imshow("Gray", gray)
-                cv2.imshow("Frame Delta", frameDelta)
-                cv2.imshow("Blurred", blurred)
-                cv2.imshow("Thresh", thresh)
-                cv2.imshow("Frame", image)
+            if self.debug:
+                self.__show_debug__()
+
+    def __show_debug__(self):
+        '''
+        Show the debug windows with the images processed.
+        '''
+        # Get the last state of the image processed
+        processed = self.processor.getSavedImageState()
+        state = processed["state"]
+        image = processed["frame"]
+        # Show all the windows
+        gray = state["gray"]
+        frameDelta = state["frameDelta"]
+        blurred = state["blurred"]
+        thresh = state["thresh"]
+        cv2.imshow("Gray", gray)
+        cv2.imshow("Frame Delta", frameDelta)
+        cv2.imshow("Blurred", blurred)
+        cv2.imshow("Thresh", thresh)
+        # Get the sizes of the windows
+        width = self.ui.video_source.width()
+        height = self.ui.video_source.height()
+        # Resize the image
+        image = cv2.resize(image, dsize=(width, height), interpolation=cv2.INTER_CUBIC)
+        # Draw the barriers
+        image = self.__show_lines__(image)
+        cv2.imshow("Frame", image)
+
+    def __adapter_to_video_source__(self, image):
+        '''
+        Adapt the image to the video_source window.
+
+        ### Parameters:
+        - image: The image to adapt.
+
+        ### Returns:
+        The image adapted to the video_source window and shown in the window.
+        '''
+        width = self.ui.video_source.width()
+        height = self.ui.video_source.height()
+        # Resize the image
+        image = cv2.resize(image, dsize=(width, height), interpolation=cv2.INTER_CUBIC)
+        # Draw the barriers
+        image = self.__show_lines__(image)
+        # Get the pixmap from the image and show it
+        pixmap = QtGui.QPixmap(QtGui.QImage(image.data, image.shape[1], image.shape[0], QtGui.QImage.Format_RGB888))
+        self.ui.video_source.setPixmap(pixmap)
+        return image
 
     def __calculate_position_barriers__(self, image):
         '''
