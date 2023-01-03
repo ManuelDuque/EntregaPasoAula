@@ -1,0 +1,22 @@
+{
+    "video_relative_path": "video.wmv",
+    "FPS": 60,
+    "MAX_SPEED": 100,
+    "ui": {
+        "ui_relative_path": "mainwindow.ui",
+        "window_title": "Paso aula",
+        "counter_text": "People: {0}"
+    },
+    "barriers": {
+        "upper": {
+            "y": 35,
+            "color": [0, 255, 0],
+            "thickness": 5
+        },
+        "lower": {
+            "y": 22,
+            "color": [255, 0, 0],
+            "thickness": 5
+        }
+    }
+}
