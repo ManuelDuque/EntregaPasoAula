@@ -23,8 +23,6 @@ class Processor():
         Constructor for the processor.
         '''
         self.utils = Utils()
-        self.frame = 0
-        self.restart()
 
     def debug(self, callback:Callable) -> None:
         '''

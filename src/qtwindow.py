@@ -48,7 +48,7 @@ class QtWindow:
         self.timer.timeout.connect(self.__update__)
         # Restart all de window values
         self.__restartButton__()
-        # Start the video
+        # Start the ui
         self.ui.show()
     
     def __speedButton__(self):
@@ -145,6 +145,8 @@ class QtWindow:
         '''
         # Reset the processor to the default values
         self.processor.restart()
+        # Reset the counter to 0 in the window
+        self.ui.counter.setText(self.utils.getValueFromConfigOf("ui", "counter_text").format(0))
         # Stop the debug mode if it is activated closing all the windows
         self.__stopDebug__()
         # Set the default values of the barriers.
