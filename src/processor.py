@@ -1,4 +1,5 @@
-import enum
+from typing import Any, Callable
+import cv2, imutils, enum
 from src.utils import singleton, Utils
 
 class State(enum.Enum):
@@ -15,32 +16,83 @@ class State(enum.Enum):
     EXITING = 4
 
 @singleton
-class Processor:
-    '''
-    Class to process the counter based on the centroid position and the barriers.
-    '''
+class Processor():
 
-    def __init__(self):
+    def __init__(self) -> None:
         '''
-        ## Constructor
-        Initialize the processor.
+        Constructor for the processor.
         '''
-        self.__utils__ = Utils()
-        self.reset()
+        self.utils = Utils()
+        self.frame = 0
+        self.restart()
 
-    def reset(self):
-        self.__image_state__ = None
+    def debug(self, callback:Callable) -> None:
+        '''
+        Called when the ui is in debug mode.
+        
+        This is called when the ui is in debug mode, and should be used to show debug information.
+        '''
+        # Check if the state is not None
+        if self.__frame_state__ is None:
+            return
+        # Check if the callback is not None
+        if callback is None:
+            return
+        # Check the type of the callback
+        if not callable(callback):
+            return
+        # Get the last state of the image processed
+        state = self.__frame_state__["state"]
+        image = self.__frame_state__["frame"]
+        # Get all the images
+        gray = state["gray"]
+        frameDelta = state["frameDelta"]
+        blurred = state["blurred"]
+        thresh = state["thresh"]
+        # Callback for each image
+        callback("Gray", gray)
+        callback("Frame Delta", frameDelta)
+        callback("Blurred", blurred)
+        callback("Thresh", thresh)
+        callback("Frame", image, True)
+
+    def stop_debug(self):
+        '''
+        Called when the ui is no longer in debug mode.
+
+        This is called when the ui is no longer in debug mode, and should be used to hide debug information.
+        '''
+        pass
+
+    def restart(self):
+        '''
+        Called when the ui is restarted.
+
+        This is called when the ui is restarted, and should be used to reset the state of the processor.
+        '''
+        self.__frame_state__ = None
         self.__state__ = State.INSIDE
         self.__counter__ = 0
+    
+    def get_last_frame(self) -> Any:
+        '''
+        Get the last frame processed.
 
-    def fromFrameToContours(self, image, comparative_image):
+        ### Returns:
+        The last frame processed (numpy.ndarray).
+        '''
+        if self.__frame_state__ is None:
+            return None
+        return self.__frame_state__["frame"]
+    
+    def __from_frame_to_contours__(self, image, comparative_image):
         '''
         Get the contours of the moving object in the image.
 
         ### Parameters:
         image: The image to process (numpy.ndarray).
         comparative_image: The image to compare with the current image (numpy.ndarray).
-
+        
         ### Returns:
         Dictionary with the following keys:
         - contours: The contours of the moving object in the image (list).
@@ -50,7 +102,6 @@ class Processor:
         - thresh: The image with a threshold applied (numpy.ndarray).
         - cnts: The contours of the moving object in the image (list).
         '''
-        import cv2, imutils
         # Transform the image to gray
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         # Calculate the difference between the first frame and the current frame
@@ -68,51 +119,67 @@ class Processor:
         # Get the biggest contour
             contours = max(cnts, key=cv2.contourArea)
         state = {"gray": gray, "frameDelta": frameDelta, "blurred": blurred, "thresh": thresh, "cnts": cnts, "contours": contours}
-        self.__image_state__ = {"state": state, "frame": image}
+        self.__frame_state__ = {"state": state, "frame": image}
         return state
 
-    def getSavedImageState(self):
-        '''
-        Get the last state of the image frame processed.
-
-        ### Returns:
-        Dictionary with the following keys:
-        - contours: The contours of the moving object in the image (list).
-        - gray: The image transformed to gray (numpy.ndarray).
-        - frameDelta: The difference between the first frame and the current frame (numpy.ndarray).
-        - blurred: The image with a blur applied (numpy.ndarray).
-        - thresh: The image with a threshold applied (numpy.ndarray).
-        - cnts: The contours of the moving object in the image (list).
-        '''
-        return self.__image_state__
-
-    def fromContoursToCentroid(self, contours):
+    def __from_contours_to_centroid__(self, contours) -> tuple:
         '''
         Get the centroid of the moving object in the image.
 
         ### Parameters:
-        cnts: The contours of the moving object in the image (list).
+        - `contours`: The contours of the moving object in the image (list).
 
         ### Returns:
-        The centroid position in the image (tuple).
+        - `tuple`: The centroid position in the image (tuple).
         '''
-        import cv2
         # Get the moments of the contour
         moments = cv2.moments(contours)
         # Get the centroid of the person
         centroid = (int(moments["m10"] / moments["m00"] if moments["m00"] != 0 else 1), int(moments["m01"] / moments["m00"] if moments["m00"] != 0 else 1))
         return centroid
 
-    def process(self, centroid, barriers):
+    def update(self, frame: Any, comparative_reference:Any=None) -> dict:
         '''
-        Calculate the counter based on the centroid position and the barriers.
+        Called when a new frame is available.
+
+        This is called when a new frame is available, and should be used to process the frame.
 
         ### Parameters:
-        centroid: The position of the centroid in the image.
-        barriers: The position of the barriers in the image.
+        - `frame`: The frame to process.
+        - `comparative_reference`: The frame to compare with the current frame.
 
         ### Returns:
-        The counter value after the process is done (int).
+        - `dict`: The processed frame called "frame" and the centroid of the object called "centroid".
+        '''
+        # Check if the comparative reference is set
+        if comparative_reference is None:
+            comparative_reference = frame
+        # Process the frame and get the contours
+        processed = self.__from_frame_to_contours__(frame, comparative_reference)
+        cnts = processed["cnts"]
+        contours = processed["contours"]
+        # Get the centroid of the person
+        centroid = None
+        if len(cnts) != 0:
+            # Get the contour of the person
+            contours = processed["contours"]
+            # Get the centroid of the person
+            centroid = self.__from_contours_to_centroid__(contours)
+            # Draw the centroid of the person
+            cv2.drawContours(frame, [contours], -1, self.utils.getValueFromConfigOf("contours", "color"), 1)
+            cv2.circle(frame, center=centroid, radius=7, color=(92, 200, 200), thickness=-1)
+        return {"frame": frame, "centroid": centroid}
+    
+    def process_centroid(self, centroid, barriers) -> int:
+        '''
+        Process the centroid with the barriers to get the counter value.
+
+        ### Parameters:
+        - `centroid`: The centroid of the object (tuple).
+        - `barriers`: The barriers to process the centroid (list).
+
+        ### Returns:
+        - `int`: The counter value.
         '''
         # Get the barriers
         lower_barrier, upper_barrier = barriers

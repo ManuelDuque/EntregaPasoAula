@@ -1,7 +1,8 @@
 from PyQt5 import uic, QtGui, QtCore
-import cv2
+from typing import Any, overload
 from src.utils import singleton, Utils
 from src.processor import Processor
+import cv2, numpy as np
 
 @singleton
 class QtWindow:
@@ -73,7 +74,7 @@ class QtWindow:
             self.timer.start()
             speed = max_speed - speed
             self.timer.setInterval(speed)
-
+    
     def __startDebug__(self):
         '''
         ### Private method.
@@ -89,7 +90,7 @@ class QtWindow:
         - The debug mode can't be activated if the video is paused.
         '''
         self.debug = True
-        self.__show_debug__()
+        self.processor.debug(self.__show_debug__)
     
     def __stopDebug__(self):
         '''
@@ -143,9 +144,7 @@ class QtWindow:
         - The speed will be set to the default speed defined in the config file like FPS value, and the timer will be started.
         '''
         # Reset the processor to the default values
-        self.processor.reset()
-        # Close all the windows
-        cv2.destroyAllWindows()
+        self.processor.restart()
         # Stop the debug mode if it is activated closing all the windows
         self.__stopDebug__()
         # Set the default values of the barriers.
@@ -216,10 +215,11 @@ class QtWindow:
         self.ui.sliderBarrera1.setValue(lower)
         self.__lower_barrier__ = { "y": lower, "color": color if color is not None else [255, 0, 0], "thickness": thickness if thickness is not None else 5 }
         # Show the changes in the view_source window
-        saved = self.processor.getSavedImageState()
-        if saved is not None:
-            image = saved["frame"]
-            self.__adapter_to_video_source__(image)
+        frame = self.processor.get_last_frame()
+        if frame is not None:
+            frame = self.__adapter_to_video_source__(image = frame)
+            self.__set_image_to_view_source__(image = frame)
+
 
     def __change_barrier_upper_value__(self, upper, color=None, thickness=None):
         '''
@@ -245,10 +245,10 @@ class QtWindow:
         self.ui.sliderBarrera2.setValue(upper)
         self.__upper_barrier__ = { "y": upper, "color": color if color is not None else [0, 255, 0], "thickness": thickness if thickness is not None else 5 }
         # Show the changes in the view_source window
-        saved = self.processor.getSavedImageState()
-        if saved is not None:
-            image = saved["frame"]
-            self.__adapter_to_video_source__(image)
+        frame = self.processor.get_last_frame()
+        if frame is not None:
+            frame = self.__adapter_to_video_source__(image = frame)
+            self.__set_image_to_view_source__(image = frame)
 
     def __update__(self):
         '''
@@ -263,79 +263,86 @@ class QtWindow:
         '''
         ret, image = self.video.read()
         if (ret):
-            # Process and get the contours
-            processed = self.processor.fromFrameToContours(image, self.firstFrame)
-            cnts = processed["cnts"]
-            contours = processed["contours"]
-            # Get the centroid of the person
-            centroid = None
-            if len(cnts) != 0:
-                # Get the contour of the person
-                contours = processed["contours"]
-                # Get the centroid of the person
-                centroid = self.processor.fromContoursToCentroid(contours)
-                # Get the position of the centroid in the video_source window
-                x = int(centroid[0] * self.ui.video_source.width() / self.video.get(3))
-                y = int(centroid[1] * self.ui.video_source.height() / self.video.get(4))
-                # Draw the centroid of the person
-                cv2.drawContours(image, [contours], -1, self.utils.getValueFromConfigOf("contours", "color"), 1)
-                cv2.circle(image, center=centroid, radius=7, color=(92, 200, 200), thickness=-1)
+            # Get the processed image
+            processed = self.processor.update(image, self.firstFrame)
+            # Get the processed image
+            image = processed["frame"]
+            # Get the centroid of the object
+            centroid = processed["centroid"]
             # Adapt the image to the video_source window
-            self.__adapter_to_video_source__(image)
+            image = self.__adapter_to_video_source__(image=image)
+            # Set the image to the video_source window
+            self.__set_image_to_view_source__(image=image)
             # Update the counter
             if centroid is not None:
-                counter = self.processor.process(centroid=(x, y), barriers=self.__barriers__)
+                # Adapt the centroid to the video_source window
+                centroid = self.__adapter_to_video_source__(centroid=centroid)
+                # Process the centroid in the processor and get the counter
+                counter = self.processor.process_centroid(centroid=centroid, barriers=self.__barriers__)
                 self.ui.counter.setText(self.utils.getValueFromConfigOf("ui", "counter_text").format(counter))
             # Show the debug windows
             if self.debug:
-                self.__show_debug__()
-
-    def __show_debug__(self):
+                self.processor.debug(self.__show_debug__)
+        
+    def __show_debug__(self, title:str=None, image:Any=None, adapt:bool=False) -> None:
         '''
         Show the debug windows with the images processed.
         '''
-        # Get the last state of the image processed
-        processed = self.processor.getSavedImageState()
-        state = processed["state"]
-        image = processed["frame"]
-        # Show all the windows
-        gray = state["gray"]
-        frameDelta = state["frameDelta"]
-        blurred = state["blurred"]
-        thresh = state["thresh"]
-        cv2.imshow("Gray", gray)
-        cv2.imshow("Frame Delta", frameDelta)
-        cv2.imshow("Blurred", blurred)
-        cv2.imshow("Thresh", thresh)
-        # Get the sizes of the windows
-        width = self.ui.video_source.width()
-        height = self.ui.video_source.height()
-        # Resize the image
-        image = cv2.resize(image, dsize=(width, height), interpolation=cv2.INTER_CUBIC)
-        # Draw the barriers
-        image = self.__show_lines__(image)
-        cv2.imshow("Frame", image)
+        if title is None:
+            title = "Debug"
+        if image is None:
+            return
+        if adapt:
+            image = self.__adapter_to_video_source__(image=image)
+        cv2.imshow(title, image)
 
-    def __adapter_to_video_source__(self, image):
+    def __adapter_to_video_source__(self, image:np.ndarray=None, centroid:tuple=None) -> Any:
         '''
         Adapt the image to the video_source window.
 
         ### Parameters:
-        - image: The image to adapt.
+        - `image`: The image to adapt.
+        - `centroid`: The centroid to adapt.
 
         ### Returns:
-        The image adapted to the video_source window and shown in the window.
+        The object adapted to the video_source window.
         '''
+        # Check if both parameters are None
+        if image is None and centroid is None:
+            return
+        # Get width and height of the video_source window
         width = self.ui.video_source.width()
         height = self.ui.video_source.height()
-        # Resize the image
-        image = cv2.resize(image, dsize=(width, height), interpolation=cv2.INTER_CUBIC)
-        # Draw the barriers
-        image = self.__show_lines__(image)
+        # Check what parameter is not None
+        if image is not None:
+            # Resize the image
+            image = cv2.resize(image, dsize=(width, height), interpolation=cv2.INTER_CUBIC)
+            # Draw the barriers
+            image = self.__show_lines__(image)
+            return image
+        elif centroid is not None:
+            # Adapt the centroid to the video_source window
+            x = int(centroid[0] * self.ui.video_source.width() / self.video.get(3))
+            y = int(centroid[1] * self.ui.video_source.height() / self.video.get(4))
+            # Return the centroid
+            return (x, y)
+    
+    def __set_image_to_view_source__(self, image:np.ndarray=None) -> None:
+        '''
+        Set the image to the view_source window.
+
+        ### Parameters:
+        - `image`: The image to set.
+
+        ### Returns:
+        None
+        '''
+        if image is None:
+            return
         # Get the pixmap from the image and show it
         pixmap = QtGui.QPixmap(QtGui.QImage(image.data, image.shape[1], image.shape[0], QtGui.QImage.Format_RGB888))
+        # Show the image in the video_source window
         self.ui.video_source.setPixmap(pixmap)
-        return image
 
     def __calculate_position_barriers__(self, image):
         '''
