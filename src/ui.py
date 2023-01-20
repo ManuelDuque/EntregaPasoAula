@@ -5,9 +5,17 @@ from src.processor import Processor
 import cv2, numpy as np
 
 @singleton
-class QtWindow:
+class Window:
     '''
     Class to create the window of the application and manage the events.
+
+    Attributes:
+    - utils: The utils class.
+    - video: The video to process.
+    - processor: The processor class.
+    - ui: The ui class.
+    - timer: The timer to update the window.
+    
     '''
 
     def __init__(self):

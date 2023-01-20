@@ -23,7 +23,7 @@ class Processor():
         Constructor for the processor.
         '''
         self.utils = Utils()
-
+    
     def debug(self, callback:Callable) -> None:
         '''
         Called when the ui is in debug mode.
@@ -88,8 +88,8 @@ class Processor():
         Get the contours of the moving object in the image.
 
         ### Parameters:
-        image: The image to process (numpy.ndarray).
-        comparative_image: The image to compare with the current image (numpy.ndarray).
+        - `image`: The image to process (numpy.ndarray).
+        - `comparative_image`: The image to compare with the current image (numpy.ndarray).
         
         ### Returns:
         Dictionary with the following keys:
@@ -194,7 +194,7 @@ class Processor():
         Update the counter value.        
 
         ### Parameters:
-        increment: The value to increment the counter (int).
+        - `increment`: The value to increment the counter (int).
 
         ### Rules:
         - The counter can't be negative
@@ -213,9 +213,9 @@ class Processor():
         Handle the centroid position between the barriers (entering or exiting).
 
         ### Parameters:
-        centroidY: The Y position of the centroid (int).
-        upper_barrier: The Y position of the upper barrier (int).
-        lower_barrier: The Y position of the lower barrier (int).
+        - `centroidY`: The Y position of the centroid (int).
+        - `upper_barrier`: The Y position of the upper barrier (int).
+        - `lower_barrier`: The Y position of the lower barrier (int).
 
         ### Rules:
         - If the centroid is between the barriers and the state is INSIDE, then the new state is EXITING.
@@ -234,8 +234,8 @@ class Processor():
         Handle the centroid position below the lower barrier (outside).
 
         ### Parameters:
-        centroidY: The Y position of the centroid (int).
-        lower_barrier: The Y position of the lower barrier (int).
+        - `centroidY`: The Y position of the centroid (int).
+        - `lower_barrier`: The Y position of the lower barrier (int).
 
         ### Rules:
         - If the centroid is below the lower barrier and the state is EXITING, then the new state is OUTSIDE and the counter is decremented.
@@ -255,8 +255,8 @@ class Processor():
         Handle the centroid position above the upper barrier (inside).
 
         ### Parameters:
-        centroidY: The Y position of the centroid (int).
-        upper_barrier: The Y position of the upper barrier (int).
+        - `centroidY`: The Y position of the centroid (int).
+        - `upper_barrier`: The Y position of the upper barrier (int).
 
         ### Rules:
         - If the centroid is above the upper barrier and the state is ENTERING, then the new state is INSIDE and the counter is incremented.
