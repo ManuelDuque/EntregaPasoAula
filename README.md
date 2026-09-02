@@ -1,6 +1,12 @@
 # EntregaPasoAula
 
+> **Aviso:** Este es un proyecto educativo realizado en el contexto de la universidad en 2022. El código no sigue los estándares ni las mejores metodologías de desarrollo actuales. Ha sido publicado con fines de referencia y aprendizaje.
+
 Aplicación de escritorio para el **conteo de personas en video de aula**. Analiza un archivo de video cuadro a cuadro, detecta movimiento mediante differencing de frames, rastrea el centroid de la silueta y cuenta personas que entran o salen de un espacio definido por barreras horizontales configurables.
+
+### Ejemplo de la interfaz en funcionamiento
+
+<video src="assets/video.mp4" controls width="600"></video>
 
 ## Características principales
 
@@ -33,8 +39,8 @@ El proyecto incluye documentación complementaria en formato PDF:
 1. Clona el repositorio:
 
 ```bash
-git clone https://github.com/ManuelDuque/publicar.git
-cd publicar/EntregaPasoAula
+git clone https://github.com/ManuelDuque/EntregaPasoAula.git
+cd EntregaPasoAula
 ```
 
 2. Instala las dependencias:
