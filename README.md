@@ -6,7 +6,11 @@ Aplicación de escritorio para el **conteo de personas en video de aula**. Anali
 
 ### Ejemplo de la interfaz en funcionamiento
 
-<video src="https://github.com/ManuelDuque/EntregaPasoAula/blob/master/assets/video.mp4?raw=true" controls autoplay muted loop width="800"></video>
+
+
+https://github.com/user-attachments/assets/18812e42-6e13-4757-bcee-025849a42f80
+
+
 
 ## Características principales
 
