@@ -6,7 +6,7 @@ Aplicación de escritorio para el **conteo de personas en video de aula**. Anali
 
 ### Ejemplo de la interfaz en funcionamiento
 
-<video src="assets/video.mp4" controls width="600"></video>
+<video src="https://github.com/ManuelDuque/EntregaPasoAula/blob/master/assets/video.mp4" controls width="600"></video>
 
 ## Características principales
 
@@ -24,10 +24,10 @@ Aplicación de escritorio para el **conteo de personas en video de aula**. Anali
 
 El proyecto incluye documentación complementaria en formato PDF:
 
-| Documento | Descripción |
-|-----------|-------------|
+| Documento                           | Descripción                                     |
+| ----------------------------------- | ----------------------------------------------- |
 | `Documentación del programador.pdf` | Documentación técnica dirigida al desarrollador |
-| `Documentación del usuario.pdf` | Guía de uso para el usuario final |
+| `Documentación del usuario.pdf`     | Guía de uso para el usuario final               |
 
 ## Prerrequisitos
 
@@ -49,11 +49,11 @@ cd EntregaPasoAula
 pip install -r requirements.txt
 ```
 
-| Paquete | Versión |
-|---------|---------|
-| PyQt5 | 5.15.7 |
+| Paquete       | Versión  |
+| ------------- | -------- |
+| PyQt5         | 5.15.7   |
 | opencv-python | 4.7.0.68 |
-| imutils | 0.5.4 |
+| imutils       | 0.5.4    |
 
 > **Nota:** `numpy` se instala automáticamente como dependencia de `opencv-python`.
 
@@ -71,38 +71,38 @@ La configuración se define en `src/config.json`:
 
 ```json
 {
-    "video_relative_path": "video.wmv",
-    "FPS": 60,
-    "MAX_SPEED": 100,
-    "ui": {
-        "ui_relative_path": "mainwindow.ui",
-        "window_title": "Paso aula",
-        "counter_text": "People: {0}"
+  "video_relative_path": "video.wmv",
+  "FPS": 60,
+  "MAX_SPEED": 100,
+  "ui": {
+    "ui_relative_path": "mainwindow.ui",
+    "window_title": "Paso aula",
+    "counter_text": "People: {0}"
+  },
+  "barriers": {
+    "upper": {
+      "y": 35,
+      "color": [0, 255, 0],
+      "thickness": 5
     },
-    "barriers": {
-        "upper": {
-            "y": 35,
-            "color": [0, 255, 0],
-            "thickness": 5
-        },
-        "lower": {
-            "y": 22,
-            "color": [255, 0, 0],
-            "thickness": 5
-        }
+    "lower": {
+      "y": 22,
+      "color": [255, 0, 0],
+      "thickness": 5
     }
+  }
 }
 ```
 
-| Campo | Descripción |
-|-------|-------------|
+| Campo                 | Descripción                                             |
+| --------------------- | ------------------------------------------------------- |
 | `video_relative_path` | Ruta del archivo de video (relativa al directorio raíz) |
-| `FPS` | Velocidad de reproducción en cuadros por segundo |
-| `MAX_SPEED` | Velocidad máxima permitida en el control de velocidad |
-| `ui.window_title` | Título de la ventana |
-| `ui.counter_text` | Texto del contador de personas (formato `{0}` = número) |
-| `barriers.upper` | Barrera superior: posición Y, color RGB y grosor |
-| `barriers.lower` | Barrera inferior: posición Y, color RGB y grosor |
+| `FPS`                 | Velocidad de reproducción en cuadros por segundo        |
+| `MAX_SPEED`           | Velocidad máxima permitida en el control de velocidad   |
+| `ui.window_title`     | Título de la ventana                                    |
+| `ui.counter_text`     | Texto del contador de personas (formato `{0}` = número) |
+| `barriers.upper`      | Barrera superior: posición Y, color RGB y grosor        |
+| `barriers.lower`      | Barrera inferior: posición Y, color RGB y grosor        |
 
 ## Estructura del proyecto
 
@@ -123,13 +123,13 @@ EntregaPasoAula/
 
 ### Archivos principales
 
-| Archivo | Descripción |
-|---------|-------------|
-| `main.py` | Punto de entrada. Crea la aplicación Qt y la ventana principal. |
-| `src/ui.py` | Clase `Window`: ventana PyQt5 que muestra el video, barreras superpuestas, contador de personas y controles de interacción (pausa, reinicio, velocidad, debug). |
+| Archivo            | Descripción                                                                                                                                                                            |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main.py`          | Punto de entrada. Crea la aplicación Qt y la ventana principal.                                                                                                                        |
+| `src/ui.py`        | Clase `Window`: ventana PyQt5 que muestra el video, barreras superpuestas, contador de personas y controles de interacción (pausa, reinicio, velocidad, debug).                        |
 | `src/processor.py` | Clase `Processor`: implementa la detección de movimiento por frame differencing, extracción de contornos, tracking del centroid y la máquina de estados para conteo de entrada/salida. |
-| `src/utils.py` | Clase `Utils`: decorator singleton, carga de JSON y resolución de rutas. |
-| `mainwindow.ui` | Archivo de diseño de interfaz generado con Qt Designer. |
+| `src/utils.py`     | Clase `Utils`: decorator singleton, carga de JSON y resolución de rutas.                                                                                                               |
+| `mainwindow.ui`    | Archivo de diseño de interfaz generado con Qt Designer.                                                                                                                                |
 
 ## Arquitectura
 
@@ -207,13 +207,13 @@ Al activar el modo debug ("Show all windows"), se abren 5 ventanas adicionales d
 
 ## Tecnologías
 
-| Tecnología | Uso |
-|------------|-----|
-| Python 3 | Lenguaje de programación |
-| PyQt5 | Interfaz gráfica de escritorio |
-| OpenCV (cv2) | Procesamiento de video y visión por computadora |
-| imutils | Utilidades de OpenCV (resize, contour operations) |
-| NumPy | Operaciones matriciales |
+| Tecnología   | Uso                                               |
+| ------------ | ------------------------------------------------- |
+| Python 3     | Lenguaje de programación                          |
+| PyQt5        | Interfaz gráfica de escritorio                    |
+| OpenCV (cv2) | Procesamiento de video y visión por computadora   |
+| imutils      | Utilidades de OpenCV (resize, contour operations) |
+| NumPy        | Operaciones matriciales                           |
 
 ## Autor
 
